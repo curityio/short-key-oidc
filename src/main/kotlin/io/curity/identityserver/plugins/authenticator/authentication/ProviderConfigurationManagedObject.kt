@@ -87,7 +87,7 @@ class ProviderConfigurationManagedObject(private val _config: ShortKeyOidcAuthen
             .setRequireExpirationTime()
             .setSkipDefaultAudienceValidation()
             .setExpectedIssuer(_config.getIssuer())
-            //.setRelaxVerificationKeyValidation()
+            .setRelaxVerificationKeyValidation()
             .setVerificationKeyResolver(HttpsJwksVerificationKeyResolver(httpsJwks))
             .build()
     }
