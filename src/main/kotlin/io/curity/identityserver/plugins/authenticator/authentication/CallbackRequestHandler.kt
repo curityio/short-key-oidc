@@ -20,6 +20,8 @@ import io.curity.identityserver.plugins.authenticator.authentication.RedirectUri
 import io.curity.identityserver.plugins.authenticator.config.ShortKeyOidcAuthenticatorPluginConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.Marker
+import org.slf4j.MarkerFactory
 import se.curity.identityserver.sdk.attribute.Attribute
 import se.curity.identityserver.sdk.attribute.Attributes
 import se.curity.identityserver.sdk.attribute.AuthenticationAttributes
@@ -36,6 +38,7 @@ import se.curity.identityserver.sdk.web.Request
 import se.curity.identityserver.sdk.web.Response
 import java.util.Optional
 
+
 class CallbackRequestHandler(
     private val _config: ShortKeyOidcAuthenticatorPluginConfig,
     private val _providerConfiguration: ProviderConfigurationManagedObject
@@ -46,6 +49,8 @@ class CallbackRequestHandler(
 
     companion object {
         private val _logger: Logger = LoggerFactory.getLogger(CallbackRequestHandler::class.java)
+        private val MASK_MARKER: Marker = MarkerFactory.getMarker("MASK")
+
         private val FILTER_CLAIMS = listOf("sub", "iat", "exp", "amr", "acr", "azp", "auth_time", "iss", "aud")
     }
 
@@ -69,7 +74,7 @@ class CallbackRequestHandler(
         validateState(requestModel.state)
 
         val tokenResponseData = redeemCodeForTokens(requestModel)
-        _logger.info("ID token: " + tokenResponseData["id_token"])
+        _logger.debug(MASK_MARKER, "ID token: " + tokenResponseData["id_token"])
 
         val idTokenClaims =
             _providerConfiguration.jwtConsumer.processToClaims(tokenResponseData["id_token"] as String)
