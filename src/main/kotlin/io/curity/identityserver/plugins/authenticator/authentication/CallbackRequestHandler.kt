@@ -26,6 +26,7 @@ import se.curity.identityserver.sdk.attribute.*
 import se.curity.identityserver.sdk.authentication.AuthenticationResult
 import se.curity.identityserver.sdk.authentication.AuthenticatorRequestHandler
 import se.curity.identityserver.sdk.errors.ErrorCode
+import se.curity.identityserver.sdk.http.ContentType
 import se.curity.identityserver.sdk.http.HttpRequest
 import se.curity.identityserver.sdk.http.HttpResponse
 import se.curity.identityserver.sdk.service.ExceptionFactory
@@ -64,7 +65,7 @@ class CallbackRequestHandler(
 
     override fun get(requestModel: CallbackRequestModel, response: Response): Optional<AuthenticationResult> {
         if (requestModel.isError()) {
-            handleError(requestModel)
+            handleErrorAndThrow(requestModel)
         }
 
         validateState(requestModel.state)
@@ -99,7 +100,7 @@ class CallbackRequestHandler(
 
         val tokenResponse = _config.getHttpClient()
             .request(_providerConfiguration.tokenEndpoint)
-            .contentType("application/x-www-form-urlencoded")
+            .contentType(ContentType.X_WWW_FORM_URLENCODED.contentType)
             .body(HttpRequest.createFormUrlEncodedBodyProcessor(createPostData(requestModel.code, redirectUri)))
             .post()
             .response()
@@ -118,7 +119,7 @@ class CallbackRequestHandler(
         }
     }
 
-    private fun handleError(requestModel: CallbackRequestModel) {
+    private fun handleErrorAndThrow(requestModel: CallbackRequestModel) {
         _logger.info(
             "User authentication failed. error: {}, error_description: {}",
             requestModel.error,
@@ -144,7 +145,7 @@ class CallbackRequestHandler(
         } else {
             _logger.debug("State did not match session")
 
-            throw _exceptionFactory.badRequestException(ErrorCode.INVALID_SERVER_STATE, "Bad state provided")
+            throw _exceptionFactory.badRequestException(ErrorCode.INVALID_INPUT, "Bad state provided")
         }
     }
 }
