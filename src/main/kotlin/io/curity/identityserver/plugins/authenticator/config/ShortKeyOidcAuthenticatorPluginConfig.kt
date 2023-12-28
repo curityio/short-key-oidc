@@ -33,8 +33,7 @@ import se.curity.identityserver.sdk.service.authentication.AuthenticatorInformat
 
 import java.util.Optional
 
-interface ShortKeyOidcAuthenticatorPluginConfig: Configuration
-{
+interface ShortKeyOidcAuthenticatorPluginConfig : Configuration {
     @Description("Client id")
     fun getClientId(): String
 
