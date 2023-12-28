@@ -26,9 +26,11 @@ import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import se.curity.identityserver.sdk.errors.ErrorCode
+import se.curity.identityserver.sdk.http.ContentType
 import se.curity.identityserver.sdk.http.HttpResponse
 import se.curity.identityserver.sdk.plugin.ManagedObject
 import se.curity.identityserver.sdk.service.HttpClient
+import java.lang.RuntimeException
 import java.net.URI
 
 class ProviderConfigurationManagedObject(private val _config: ShortKeyOidcAuthenticatorPluginConfig) :
@@ -59,15 +61,13 @@ class ProviderConfigurationManagedObject(private val _config: ShortKeyOidcAuthen
         }
         _httpClient = httpClient
         metadata = DiscoveredProviderMetadata(_config, httpClient)
-        authorizeEndpoint = metadata?.authorizeEndpoint ?: throw _config.getExceptionFactory()
-            .internalServerException(ErrorCode.PLUGIN_ERROR, "Metadata not fetched")
-        tokenEndpoint = metadata?.tokenEndpoint ?: throw _config.getExceptionFactory()
-            .internalServerException(ErrorCode.PLUGIN_ERROR, "Metadata not fetched")
+        authorizeEndpoint = metadata?.authorizeEndpoint ?: throw metadataNotFetchedException()
+        tokenEndpoint = metadata?.tokenEndpoint ?: throw metadataNotFetchedException()
     }
 
+
     private fun createJwtConsumer(): JwtConsumer {
-        val jwksUri = metadata?.jwksUri ?: throw _config.getExceptionFactory()
-            .internalServerException(ErrorCode.PLUGIN_ERROR, "Metadata not fetched")
+        val jwksUri = metadata?.jwksUri ?: throw metadataNotFetchedException()
         _logger.info("jwks_uri: $jwksUri")
 
         val httpsJwks = HttpsJwks(jwksUri)
@@ -92,6 +92,9 @@ class ProviderConfigurationManagedObject(private val _config: ShortKeyOidcAuthen
             .build()
     }
 
+    private fun metadataNotFetchedException(): RuntimeException = _config.getExceptionFactory()
+        .internalServerException(ErrorCode.PLUGIN_ERROR, "Metadata not fetched")
+
     /**
      * Used to be able to use the SDK HttpClient with the Jose4j library, to keep the http settings in Curity config
      */
@@ -113,7 +116,7 @@ class ProviderConfigurationManagedObject(private val _config: ShortKeyOidcAuthen
     }
 
     /**
-     * Disccovers and holds the metadata of the OpenID provider
+     * Discovers and holds the metadata of the OpenID provider
      */
     class DiscoveredProviderMetadata(config: ShortKeyOidcAuthenticatorPluginConfig, httpClient: HttpClient) {
         companion object {
@@ -130,7 +133,7 @@ class ProviderConfigurationManagedObject(private val _config: ShortKeyOidcAuthen
             _logger.info("Discovering metadata")
             val discoveryResponse = httpClient
                 .request(URI(config.getIssuer() + "/.well-known/openid-configuration"))
-                .header("Accept", "application/json")
+                .header("Accept", ContentType.JSON.contentType)
                 .get().response()
             val providerConfiguration = discoveryResponse.body(HttpResponse.asJsonObject(config.getJson()))
 
