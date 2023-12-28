@@ -43,10 +43,11 @@ class ShortKeyOidcAuthenticatorRequestHandler(private val _config: ShortKeyOidcA
 
         val redirectUri = createRedirectUri(_authenticatorInformationProvider, _exceptionFactory)
         val state = UUID.randomUUID().toString()
-        val scope = _config.getScope().toMutableSet()
-        if(!scope.contains("openid")) {
-            _logger.debug("Configured scope did not contain 'openid', adding it to the request")
-            scope.add("openid")
+        val scope = _config.getScope().toMutableSet().apply {
+            if ("openid" !in this) {
+                _logger.debug("Configured scope did not contain 'openid', adding it to the request")
+                add("openid")
+            }
         }
 
         _config.getSessionManager().put(Attribute.of("state", state))
