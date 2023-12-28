@@ -22,11 +22,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.Marker
 import org.slf4j.MarkerFactory
-import se.curity.identityserver.sdk.attribute.Attribute
-import se.curity.identityserver.sdk.attribute.Attributes
-import se.curity.identityserver.sdk.attribute.AuthenticationAttributes
-import se.curity.identityserver.sdk.attribute.ContextAttributes
-import se.curity.identityserver.sdk.attribute.SubjectAttributes
+import se.curity.identityserver.sdk.attribute.*
 import se.curity.identityserver.sdk.authentication.AuthenticationResult
 import se.curity.identityserver.sdk.authentication.AuthenticatorRequestHandler
 import se.curity.identityserver.sdk.errors.ErrorCode
@@ -36,7 +32,7 @@ import se.curity.identityserver.sdk.service.ExceptionFactory
 import se.curity.identityserver.sdk.service.authentication.AuthenticatorInformationProvider
 import se.curity.identityserver.sdk.web.Request
 import se.curity.identityserver.sdk.web.Response
-import java.util.Optional
+import java.util.*
 
 
 class CallbackRequestHandler(
@@ -107,19 +103,19 @@ class CallbackRequestHandler(
             .body(HttpRequest.createFormUrlEncodedBodyProcessor(createPostData(requestModel.code, redirectUri)))
             .post()
             .response()
-        val statusCode = tokenResponse.statusCode()
 
-        if (statusCode != 200) {
-            if (_logger.isInfoEnabled) {
-                _logger.info(
-                    "Got error response from token endpoint: error = {}, {}", statusCode,
-                    tokenResponse.body(HttpResponse.asString())
-                )
+        when (tokenResponse.statusCode()) {
+            200 -> return tokenResponse.body(HttpResponse.asJsonObject(_config.getJson()))
+            else -> {
+                if (_logger.isInfoEnabled) {
+                    _logger.info(
+                        "Got error response from token endpoint: error = {}, {}", tokenResponse.statusCode(),
+                        tokenResponse.body(HttpResponse.asString())
+                    )
+                }
+                throw _exceptionFactory.internalServerException(ErrorCode.EXTERNAL_SERVICE_ERROR)
             }
-
-            throw _exceptionFactory.internalServerException(ErrorCode.EXTERNAL_SERVICE_ERROR)
         }
-        return tokenResponse.body(HttpResponse.asJsonObject(_config.getJson()))
     }
 
     private fun handleError(requestModel: CallbackRequestModel) {
