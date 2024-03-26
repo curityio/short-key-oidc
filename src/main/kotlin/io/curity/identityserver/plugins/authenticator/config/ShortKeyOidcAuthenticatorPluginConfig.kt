@@ -47,6 +47,9 @@ interface ShortKeyOidcAuthenticatorPluginConfig : Configuration {
     @DefaultService
     fun getHttpClient(): HttpClient
 
+    @Description("The claims parameter that are returned at the userinfo endpoint and in the ID token")
+    fun getClaims(): Optional<String>
+
     fun getSessionManager(): SessionManager
 
     fun getExceptionFactory(): ExceptionFactory

@@ -101,7 +101,7 @@ class CallbackRequestHandler(
         val tokenResponse = _config.getHttpClient()
             .request(_providerConfiguration.tokenEndpoint)
             .contentType(ContentType.X_WWW_FORM_URLENCODED.contentType)
-            .body(HttpRequest.createFormUrlEncodedBodyProcessor(createPostData(requestModel.code, redirectUri)))
+            .body(HttpRequest.createFormUrlEncodedBodyProcessor(requestModel.code?.let { createPostData(it, redirectUri) }))
             .post()
             .response()
 

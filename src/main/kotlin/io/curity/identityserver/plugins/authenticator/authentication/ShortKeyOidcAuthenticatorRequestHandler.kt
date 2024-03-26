@@ -28,6 +28,8 @@ import se.curity.identityserver.sdk.service.ExceptionFactory
 import se.curity.identityserver.sdk.service.authentication.AuthenticatorInformationProvider
 import se.curity.identityserver.sdk.web.Request
 import se.curity.identityserver.sdk.web.Response
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.util.Optional
 import java.util.UUID
 
@@ -50,7 +52,8 @@ class ShortKeyOidcAuthenticatorRequestHandler(private val _config: ShortKeyOidcA
             }
         }
 
-        _config.getSessionManager().put(Attribute.of("state", state))
+
+        val claims = _config.getClaims().orElse(null)
 
         val queryStringArguments = linkedMapOf<String, Collection<String>>(
             "client_id" to setOf(_config.getClientId()),
@@ -58,7 +61,11 @@ class ShortKeyOidcAuthenticatorRequestHandler(private val _config: ShortKeyOidcA
             "state" to setOf(state),
             "response_type" to setOf("code"),
             "scope" to setOf(scope.joinToString(" "))
-        )
+        ).apply {
+            claims?.let { put("claims", setOf(it))}
+        }
+
+        _config.getSessionManager().put(Attribute.of("state", state))
 
         _logger.debug("Redirecting to {} with query string arguments {}", _providerConfig.authorizeEndpoint,
             queryStringArguments
